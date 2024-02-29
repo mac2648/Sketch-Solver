@@ -36,6 +36,7 @@ void ADeletable::Tick(float DeltaTime)
 
 void ADeletable::Delete()
 {
+	StopHighLight();
 	Destroy();
 }
 

@@ -10,14 +10,18 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
+#include "Deletable.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
+
+#define INTERACT_RANGE 500
 
 //////////////////////////////////////////////////////////////////////////
 // ASketchSolverCharacter
 
 ASketchSolverCharacter::ASketchSolverCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	// Character doesnt have a rifle at start
 	bHasRifle = false;
 	
@@ -55,6 +59,17 @@ void ASketchSolverCharacter::BeginPlay()
 		}
 	}
 
+}
+
+void ASketchSolverCharacter::Tick(float DeltaTime)
+{
+	if (AActor* HitActor = GetLineTraceByPlayerView())
+	{
+		if (ADeletable* HitDeletable = Cast<ADeletable>(HitActor))
+		{
+			HitDeletable->HighLight(this);
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
@@ -115,4 +130,27 @@ void ASketchSolverCharacter::SetHasRifle(bool bNewHasRifle)
 bool ASketchSolverCharacter::GetHasRifle()
 {
 	return bHasRifle;
+}
+
+AActor* ASketchSolverCharacter::GetLineTraceByPlayerView()
+{
+	if (AController* PlayerController = GetController())
+	{
+		FHitResult HitResult;
+
+		FVector PlayerCameraPosition;
+		FRotator PlayerCameraRotation;
+
+		PlayerController->GetPlayerViewPoint(PlayerCameraPosition, PlayerCameraRotation);
+
+		FVector EndPoint = PlayerCameraPosition + (PlayerCameraRotation.Vector() * INTERACT_RANGE);
+
+		GetWorld()->LineTraceSingleByChannel(HitResult, PlayerCameraPosition, EndPoint, ECollisionChannel::ECC_Visibility);
+
+		return HitResult.GetActor();
+	}
+	else
+	{
+		return nullptr;
+	}
 }
